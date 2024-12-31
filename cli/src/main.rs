@@ -6,11 +6,12 @@ mod logger;
 mod range;
 mod watermark;
 mod window;
+mod twitter;
 
 use std::fs::read_to_string;
 
 use anyhow::bail;
-use clap::value_parser;
+use clap::{value_parser, Subcommand};
 use clap::Parser;
 use code::create_code;
 use codesnap::config::CodeSnap;
@@ -18,6 +19,7 @@ use codesnap::config::SnapshotConfig;
 use egg::say;
 use watermark::create_watermark;
 use window::create_window;
+use twitter::{send_tweet, twitter_login};
 
 // use std::thread;
 use std::time::Duration;
@@ -32,6 +34,9 @@ pub const STDIN_CODE_DEFAULT_CHAR: &'static str = "-";
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct CLI {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
     /// Path to the file to snapshot
     #[arg(short = 'f', long)]
     from_file: Option<String>,
@@ -219,6 +224,12 @@ struct CLI {
     config: Option<String>,
 }
 
+#[derive(Subcommand)]
+enum Commands {
+    Tweet,
+    TwitterLogin,
+}
+
 fn output_snapshot(cli: &CLI, snapshot: &SnapshotConfig) -> anyhow::Result<String> {
     // Save snapshot to clipboard
     if cli.output == "clipboard" {
@@ -260,6 +271,19 @@ fn output_snapshot(cli: &CLI, snapshot: &SnapshotConfig) -> anyhow::Result<Strin
 
 fn generate_snapshot() -> anyhow::Result<()> {
     let cli = CLI::parse();
+
+    match &cli.command {
+        Some(Commands::Tweet) => {
+            send_tweet()?;
+            return Ok(());
+        }
+        Some(Commands::TwitterLogin) => {
+            twitter_login()?;
+            return Ok(());
+        }
+        None => {}
+    }
+
     let snapshot = create_snapshot_config(&cli)?;
     let snapshot_type = cli.r#type.clone();
 

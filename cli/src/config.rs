@@ -5,6 +5,13 @@ use anyhow::Context;
 
 const DEFAULT_CONFIG_CONTENT: &'static str = include_str!("../config.json");
 
+pub struct TwitterAuth {
+    pub api_key: String,
+    pub api_secret_key: String,
+    pub access_token: String,
+    pub access_token_secret: String,
+}
+
 // Get CodeSnap config, create if the config does not exists
 pub fn get_config_content() -> anyhow::Result<String> {
     let home_dir = home::home_dir().context("Unable to get your home dir")?;
